@@ -71,7 +71,6 @@ const App = () => {
 
   const saveResponse = (challengeCesar) => {
     setFile(JSON.stringify(challengeCesar, null, 2));
-    console.log(JSON.stringify(challengeCesar, null, 2));
   };
 
   const renderChallenge = () => {
