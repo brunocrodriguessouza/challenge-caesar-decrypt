@@ -10,8 +10,8 @@ const App = () => {
 
   const [file, setFile] = useState();
 
-  const getChallenge = async () => {
-    const { data } = await axios.get(`${BASE_URL}/generate-data?token=${TOKEN}`);
+  const getChallenge = () => {
+    const data = axios.get(`${BASE_URL}/generate-data?token=${TOKEN}`);
     return data;
   }
 
@@ -35,36 +35,54 @@ const App = () => {
     return newStr;
   }
 
-  const sendReponse = async () => {
-    const data = new FormData()
-    var ObjFile = new File([file], "answer.json", { type: "text/plain" })
-    data.append('answer', ObjFile);
+  const getCookie = () => {
+    const cookie = document.cookie;
+    const indexOfCookie = cookie.indexOf("_cesar-algorithm");
+    if (indexOfCookie === -1) {
+      var now = new Date();
+      var time = now.getTime();
+      var expireTime = time + 10000;
+      now.setTime(expireTime);
+      document.cookie = '_cesar-algorithm=ok;expires=' + now.toGMTString() + ';path=/';
+      return true;
+    } else {
+      return false;
+    }
+  }
 
-    await axios.post("https://api.codenation.dev/v1/challenge/dev-ps/submit-solution?token=3fbee28411eeb76b99840247b4537c19c47ab5c1",
-      data, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      }
-    }).then(res => {
-      console.log('Arquivo enviado com sucesso!');
-    })
+  const sendResponse = () => {
+    const data = new FormData()
+    var objectFile = new File([file], "answer.json", { type: "text/plain" })
+    data.append('answer', objectFile);
+    if (!getCookie()) {
+      axios.post(`${BASE_URL}/submit-solution?token=${TOKEN}`,
+        data, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        }
+      }).then(res => {
+        getCookie();
+        console.log('Arquivo enviado com sucesso!');
+      })
+    }
   }
 
   const geraSha1 = string => sha1(string);
 
-  const saveReponse = (challengeCesar) => {
+  const saveResponse = (challengeCesar) => {
     setFile(JSON.stringify(challengeCesar, null, 2));
+    console.log(JSON.stringify(challengeCesar, null, 2));
   };
 
   const renderChallenge = () => {
     getChallenge().then(challenge => {
-      const { cifrado, numero_casas } = challenge;
+      const { cifrado, numero_casas } = challenge.data;
 
-      challenge.decifrado = decrypt(cifrado, numero_casas);
-      challenge.resumo_criptografico = geraSha1(challenge.decifrado);
+      challenge.data.decifrado = decrypt(cifrado, numero_casas);
+      challenge.data.resumo_criptografico = geraSha1(challenge.data.decifrado);
 
-      saveReponse(challenge);
-      challenge.resumo_criptografico && sendReponse();
+      saveResponse(challenge.data);
+      challenge.data.resumo_criptografico && sendResponse();
     })
   }
 
